@@ -1,6 +1,7 @@
 'use client';
 
 import { MinimalistHero } from '@/components/main/hero';
+import { UserMenu } from '@/components/ui/UserMenu';
 import { Code2, Camera, Send } from 'lucide-react';
 
 export default function Home() {
@@ -13,7 +14,7 @@ export default function Home() {
         { label: 'CONTACT', href: '#contact' },
       ]}
       mainText="약속 잡기 버튼을 클릭한 후 제갈민혁과 약속을 잡아보세요. 늦기 전에 약속 시간을 쟁취하세요!"
-      readMoreLink="#about"
+      readMoreLink="/calender"
       imageSrc="/jg.png"
       imageAlt="Profile"
       overlayText={{
@@ -26,6 +27,7 @@ export default function Home() {
         { icon: Send, href: '#' },
       ]}
       locationText="Seoul, Korea"
+      headerAction={<UserMenu />}
     />
   );
 }

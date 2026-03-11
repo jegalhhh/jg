@@ -7,7 +7,19 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data: { session } } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (session?.user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('onboarded')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!profile?.onboarded) {
+        return NextResponse.redirect(`${origin}/onboarding`);
+      }
+    }
   }
 
   return NextResponse.redirect(`${origin}/`);

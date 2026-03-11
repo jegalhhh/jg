@@ -1,0 +1,146 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { CalendarGrid } from '@/components/calender/CalendarGrid';
+import { DayView } from '@/components/calender/DayView';
+import { RequestQueue } from '@/components/calender/RequestQueue';
+import { getMonthRange, isSameDay, toDateString } from '@/lib/calendar-utils';
+import type { Schedule, ScheduleRequest, CalendarUser } from '@/lib/types/calendar';
+
+interface Props {
+  initialSchedules: Schedule[];
+  initialRequests: ScheduleRequest[];
+  initialYear: number;
+  initialMonth: number;
+}
+
+export function CalendarPageClient({ initialSchedules, initialRequests, initialYear, initialMonth }: Props) {
+  const { user, profile } = useAuth();
+  const isAdmin = profile?.is_admin ?? false;
+  const isLoggedIn = !!user;
+
+  const [currentYear, setCurrentYear] = useState(initialYear);
+  const [currentMonth, setCurrentMonth] = useState(initialMonth);
+  const [schedules, setSchedules] = useState<Schedule[]>(initialSchedules);
+  const [requests, setRequests] = useState<ScheduleRequest[]>(initialRequests);
+  const [allUsers, setAllUsers] = useState<CalendarUser[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // 협업자 이름 조회용 유저 목록
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from('users').select('id, name, email, avatar_url').then(({ data }) => {
+      if (data) setAllUsers(data as CalendarUser[]);
+    });
+  }, []);
+
+  // 월 변경 시 일정 재조회
+  useEffect(() => {
+    const supabase = createClient();
+    const { from, to } = getMonthRange(currentYear, currentMonth);
+    supabase
+      .from('schedules')
+      .select('*')
+      .gte('date', from)
+      .lte('date', to)
+      .then(({ data }) => { if (data) setSchedules(data as Schedule[]); });
+  }, [currentYear, currentMonth]);
+
+  const handleMonthChange = (y: number, m: number) => {
+    setCurrentYear(y);
+    setCurrentMonth(m);
+    setSelectedDate(null);
+  };
+
+  // 선택된 날짜의 확정 일정
+  const daySchedules = selectedDate
+    ? schedules.filter(s => s.date === toDateString(selectedDate))
+    : [];
+
+  const handleRequestSubmitted = (req: ScheduleRequest) => {
+    setRequests(prev => [req, ...prev]);
+  };
+
+  const handleScheduleAdded = (schedule: Schedule) => {
+    setSchedules(prev => [...prev, schedule]);
+  };
+
+  const handleRequestAccepted = (requestId: string, newSchedule: Schedule) => {
+    setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'accepted' as const } : r));
+    setSchedules(prev => [...prev, newSchedule]);
+  };
+
+  const handleRequestRejected = (requestId: string) => {
+    setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'rejected' as const } : r));
+  };
+
+  const userProfile = user && profile
+    ? { id: profile.id, name: profile.name, email: profile.email }
+    : null;
+
+  return (
+    <div className="min-h-screen bg-background px-4 py-8 md:px-8 md:py-12">
+      <div className="mx-auto max-w-6xl">
+        {/* 페이지 헤더 */}
+        <div className="mb-8">
+          <a href="/" className="text-sm text-foreground/40 hover:text-foreground transition-colors">← 홈으로</a>
+          <h1 className="mt-2 text-3xl font-extrabold">약속 캘린더</h1>
+          <p className="mt-1 text-sm text-foreground/50">날짜를 클릭해 일정을 요청하세요</p>
+        </div>
+
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          {/* 왼쪽: 캘린더 + DayView */}
+          <div className="flex flex-col gap-4 lg:w-[55%]">
+            <div className="rounded-3xl border border-foreground/10 bg-background/50 p-6 shadow-sm">
+              <CalendarGrid
+                year={currentYear}
+                month={currentMonth}
+                schedules={schedules}
+                selectedDate={selectedDate}
+                onDateSelect={setSelectedDate}
+                onMonthChange={handleMonthChange}
+              />
+            </div>
+
+            <AnimatePresence>
+              {selectedDate && (
+                <DayView
+                  date={selectedDate}
+                  schedules={daySchedules}
+                  isAdmin={isAdmin}
+                  isLoggedIn={isLoggedIn}
+                  userProfile={userProfile}
+                  onClose={() => setSelectedDate(null)}
+                  onRequestSubmitted={handleRequestSubmitted}
+                  onScheduleAdded={handleScheduleAdded}
+                />
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* 오른쪽: 요청 큐 */}
+          <div className="lg:w-[45%]">
+            <div className="rounded-3xl border border-foreground/10 bg-background/50 p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-base font-bold">요청 큐</h2>
+                <span className="rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs font-semibold text-foreground/60">
+                  {requests.filter(r => r.status === 'pending').length} 대기중
+                </span>
+              </div>
+              <RequestQueue
+                requests={requests}
+                isAdmin={isAdmin}
+                allUsers={allUsers}
+                onAccepted={handleRequestAccepted}
+                onRejected={handleRequestRejected}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

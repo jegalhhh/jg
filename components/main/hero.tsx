@@ -19,6 +19,7 @@ interface MinimalistHeroProps {
   socialLinks: { icon: LucideIcon; href: string }[];
   locationText: string;
   className?: string;
+  headerAction?: React.ReactNode;
 }
 
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
@@ -47,6 +48,7 @@ export const MinimalistHero = ({
   socialLinks,
   locationText,
   className,
+  headerAction,
 }: MinimalistHeroProps) => {
   return (
     <div
@@ -72,17 +74,22 @@ export const MinimalistHero = ({
             </NavLink>
           ))}
         </div>
-        <motion.button
+        <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col space-y-1.5 md:hidden"
-          aria-label="Open menu"
+          className="flex items-center gap-4"
         >
-          <span className="block h-0.5 w-6 bg-foreground"></span>
-          <span className="block h-0.5 w-6 bg-foreground"></span>
-          <span className="block h-0.5 w-5 bg-foreground"></span>
-        </motion.button>
+          {headerAction}
+          <button
+            className="flex flex-col space-y-1.5 md:hidden"
+            aria-label="Open menu"
+          >
+            <span className="block h-0.5 w-6 bg-foreground"></span>
+            <span className="block h-0.5 w-6 bg-foreground"></span>
+            <span className="block h-0.5 w-5 bg-foreground"></span>
+          </button>
+        </motion.div>
       </header>
 
       {/* Main Content Area */}
@@ -95,13 +102,33 @@ export const MinimalistHero = ({
           className="z-20 order-2 md:order-1 text-center md:text-left"
         >
           <p className="mx-auto max-w-xs text-sm leading-relaxed text-foreground/80 md:mx-0">{mainText}</p>
-          <a
+          <motion.a
             href={readMoreLink}
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-2.5 text-sm font-medium text-background transition-all duration-300 hover:gap-4 hover:bg-foreground/80"
+            animate={{
+              scale: [1, 1.06, 1],
+              boxShadow: [
+                '0 0 0px 0px rgba(234,179,8,0)',
+                '0 0 24px 8px rgba(234,179,8,0.7)',
+                '0 0 0px 0px rgba(234,179,8,0)',
+              ],
+            }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.97 }}
+            className="relative mt-6 inline-flex flex-col items-center gap-1 overflow-hidden rounded-2xl bg-foreground px-10 py-5 font-bold text-background shadow-lg text-xl"
           >
-            약속 잡으러 가기
-            <span className="text-base leading-none">→</span>
-          </a>
+            {/* shimmer overlay */}
+            <motion.span
+              className="pointer-events-none absolute inset-0 -translate-x-full skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/30 to-transparent"
+              animate={{ translateX: ['−100%', '200%'] }}
+              transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 1.4, ease: 'easeInOut' }}
+            />
+            <span className="flex items-center gap-3">
+              약속 잡으러 가기
+              <span className="text-2xl leading-none">→</span>
+            </span>
+            <span className="text-xs font-normal opacity-60">(비회원 가능)</span>
+          </motion.a>
         </motion.div>
 
         {/* Center Image with Circle */}
