@@ -17,8 +17,8 @@ export function TimeBlockGrid({
   selectedBlocks,
   onBlockToggle,
   disabled = false,
-  startHour = 8,
-  endHour = 22,
+  startHour = 0,
+  endHour = 24,
 }: TimeBlockGridProps) {
   const startBlock = startHour * 2;
   const endBlock = endHour * 2;

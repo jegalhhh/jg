@@ -6,7 +6,10 @@ export type Schedule = {
   end_block: number;    // exclusive
   created_by: string | null;
   collaborators: string[];
+  guest_collaborators: string[];
   notes: string | null;
+  location: string | null;
+  requester_name: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -21,7 +24,9 @@ export type ScheduleRequest = {
   requester_name: string;
   requester_email: string | null;
   collaborators: string[];
+  guest_collaborators: string[];
   notes: string | null;
+  location: string | null;
   status: 'pending' | 'accepted' | 'rejected';
   admin_note: string | null;
   created_at: string;
@@ -34,3 +39,7 @@ export type CalendarUser = {
   email: string;
   avatar_url: string | null;
 };
+
+export type CollaboratorEntry =
+  | { type: 'member'; user: CalendarUser }
+  | { type: 'guest'; name: string };
